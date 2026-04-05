@@ -1,4 +1,4 @@
--- SiriusUILib.lua (исправленная версия)
+-- SiriusUILib.lua (версия с верхней панелью)
 local SiriusUILib = {}
 
 -- Services
@@ -6,15 +6,15 @@ local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 local GuiService = game:GetService("GuiService")
-local RunService = game:GetService("RunService")
 
--- Цветовая схема
+-- Цветовая схема (чёрный, белый, градиент)
 SiriusUILib.Colors = {
     Background = Color3.fromRGB(0, 0, 0),
     Foreground = Color3.fromRGB(255, 255, 255),
     GradientStart = Color3.fromRGB(255, 255, 255),
-    GradientEnd = Color3.fromRGB(150, 150, 150),
-    Accent = Color3.fromRGB(200, 200, 200)
+    GradientEnd = Color3.fromRGB(100, 100, 100),
+    Accent = Color3.fromRGB(200, 200, 200),
+    TopBar = Color3.fromRGB(20, 20, 20)
 }
 
 -- Настройки
@@ -74,7 +74,6 @@ local function makeDraggable(frame)
     end)
 end
 
--- Главная функция создания окна
 function SiriusUILib:CreateWindow(title, size)
     if mainGUI then mainGUI:Destroy() end
 
@@ -85,200 +84,236 @@ function SiriusUILib:CreateWindow(title, size)
     gui.IgnoreGuiInset = true
     gui.Enabled = false
 
+    -- Основной фрейм
     local mainFrame = Instance.new("Frame")
     mainFrame.Name = "MainFrame"
-    mainFrame.Size = size or UDim2.new(0, 550, 0, 450)
-    mainFrame.Position = UDim2.new(0.5, -275, 0.5, -225)
+    mainFrame.Size = size or UDim2.new(0, 600, 0, 450)
+    mainFrame.Position = UDim2.new(0.5, -300, 0.5, -225)
     mainFrame.AnchorPoint = Vector2.new(0.5, 0.5)
     mainFrame.BackgroundColor3 = SiriusUILib.Colors.Background
-    mainFrame.BackgroundTransparency = 0.05
+    mainFrame.BackgroundTransparency = 0.1
     mainFrame.BorderSizePixel = 0
+    mainFrame.ClipsDescendants = true
     mainFrame.Parent = gui
 
-    local gradient = Instance.new("UIGradient")
-    gradient.Color = ColorSequence.new({
+    -- Градиент фона
+    local bgGradient = Instance.new("UIGradient")
+    bgGradient.Color = ColorSequence.new({
         ColorSequenceKeypoint.new(0, SiriusUILib.Colors.GradientStart),
         ColorSequenceKeypoint.new(1, SiriusUILib.Colors.GradientEnd)
     })
-    gradient.Rotation = 90
-    gradient.Parent = mainFrame
+    bgGradient.Rotation = 135
+    bgGradient.Transparency = 0.85
+    bgGradient.Parent = mainFrame
 
+    -- Рамка
     local stroke = Instance.new("UIStroke")
     stroke.Color = SiriusUILib.Colors.Foreground
-    stroke.Thickness = 1
-    stroke.Transparency = 0.8
+    stroke.Thickness = 1.5
+    stroke.Transparency = 0.7
     stroke.Parent = mainFrame
 
     local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 8)
+    corner.CornerRadius = UDim.new(0, 10)
     corner.Parent = mainFrame
 
-    -- Заголовок
-    local titleBar = Instance.new("Frame")
-    titleBar.Name = "TitleBar"
-    titleBar.Size = UDim2.new(1, 0, 0, 35)
-    titleBar.BackgroundColor3 = SiriusUILib.Colors.Background
-    titleBar.BackgroundTransparency = 0.5
-    titleBar.BorderSizePixel = 0
-    titleBar.Parent = mainFrame
+    -- ========== ВЕРХНЯЯ ПАНЕЛЬ (как в оригинале) ==========
+    local topBar = Instance.new("Frame")
+    topBar.Name = "TopBar"
+    topBar.Size = UDim2.new(1, 0, 0, 50)
+    topBar.Position = UDim2.new(0, 0, 0, 0)
+    topBar.BackgroundColor3 = SiriusUILib.Colors.TopBar
+    topBar.BackgroundTransparency = 0.15
+    topBar.BorderSizePixel = 0
+    topBar.Parent = mainFrame
 
+    local topCorner = Instance.new("UICorner")
+    topCorner.CornerRadius = UDim.new(0, 10)
+    topCorner.Parent = topBar
+
+    -- Заголовок слева
     local titleLabel = Instance.new("TextLabel")
-    titleLabel.Text = title or "Sirius UI"
+    titleLabel.Text = title or "SIRIUS"
     titleLabel.TextColor3 = SiriusUILib.Colors.Foreground
     titleLabel.TextSize = 18
-    titleLabel.Font = Enum.Font.GothamSemibold
+    titleLabel.Font = Enum.Font.GothamBold
     titleLabel.TextXAlignment = Enum.TextXAlignment.Left
-    titleLabel.Position = UDim2.new(0, 15, 0.5, -10)
-    titleLabel.Size = UDim2.new(0, 200, 0, 20)
+    titleLabel.Position = UDim2.new(0, 15, 0.5, -12)
+    titleLabel.Size = UDim2.new(0, 150, 0, 24)
     titleLabel.BackgroundTransparency = 1
-    titleLabel.Parent = titleBar
+    titleLabel.Parent = topBar
 
+    -- Контейнер для кнопок на топбаре
+    local topButtonsContainer = Instance.new("Frame")
+    topButtonsContainer.Name = "TopButtons"
+    topButtonsContainer.Size = UDim2.new(0, 300, 1, 0)
+    topButtonsContainer.Position = UDim2.new(0.5, -150, 0, 0)
+    topButtonsContainer.BackgroundTransparency = 1
+    topButtonsContainer.Parent = topBar
+
+    local buttonsLayout = Instance.new("UIListLayout")
+    buttonsLayout.FillDirection = Enum.FillDirection.Horizontal
+    buttonsLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+    buttonsLayout.VerticalAlignment = Enum.VerticalAlignment.Center
+    buttonsLayout.Padding = UDim.new(0, 5)
+    buttonsLayout.Parent = topButtonsContainer
+
+    -- Кнопка закрытия справа
     local closeBtn = Instance.new("TextButton")
     closeBtn.Text = "✕"
     closeBtn.TextColor3 = SiriusUILib.Colors.Foreground
-    closeBtn.TextSize = 18
+    closeBtn.TextSize = 20
     closeBtn.Font = Enum.Font.GothamBold
-    closeBtn.Size = UDim2.new(0, 35, 1, 0)
-    closeBtn.Position = UDim2.new(1, -35, 0, 0)
+    closeBtn.Size = UDim2.new(0, 45, 1, 0)
+    closeBtn.Position = UDim2.new(1, -45, 0, 0)
     closeBtn.BackgroundTransparency = 1
-    closeBtn.Parent = titleBar
+    closeBtn.Parent = topBar
+    
+    closeBtn.MouseEnter:Connect(function()
+        createTween(closeBtn, {TextColor3 = Color3.fromRGB(255, 100, 100)}, 0.2)
+    end)
+    closeBtn.MouseLeave:Connect(function()
+        createTween(closeBtn, {TextColor3 = SiriusUILib.Colors.Foreground}, 0.2)
+    end)
     closeBtn.MouseButton1Click:Connect(function()
         gui.Enabled = false
     end)
 
-    makeDraggable(titleBar)
-
-    -- Контейнер табов
-    local tabContainer = Instance.new("Frame")
-    tabContainer.Name = "TabContainer"
-    tabContainer.Size = UDim2.new(0, 120, 1, -35)
-    tabContainer.Position = UDim2.new(0, 0, 0, 35)
-    tabContainer.BackgroundColor3 = SiriusUILib.Colors.Background
-    tabContainer.BackgroundTransparency = 0.2
-    tabContainer.BorderSizePixel = 0
-    tabContainer.Parent = mainFrame
-
-    -- Контейнер контента
+    -- Контейнер для контента (под топбаром)
     local contentContainer = Instance.new("Frame")
     contentContainer.Name = "ContentContainer"
-    contentContainer.Size = UDim2.new(1, -120, 1, -35)
-    contentContainer.Position = UDim2.new(0, 120, 0, 35)
-    contentContainer.BackgroundColor3 = SiriusUILib.Colors.Background
-    contentContainer.BackgroundTransparency = 0.1
-    contentContainer.BorderSizePixel = 0
+    contentContainer.Size = UDim2.new(1, 0, 1, -50)
+    contentContainer.Position = UDim2.new(0, 0, 0, 50)
+    contentContainer.BackgroundTransparency = 1
     contentContainer.Parent = mainFrame
 
-    local tabs = {}
-    local activeTab = nil
+    -- Контейнер для страниц (табов)
+    local pagesContainer = Instance.new("Frame")
+    pagesContainer.Name = "Pages"
+    pagesContainer.Size = UDim2.new(1, 0, 1, 0)
+    pagesContainer.BackgroundTransparency = 1
+    pagesContainer.Parent = contentContainer
 
-    local function createTabButton(tabName, callback)
-        local button = Instance.new("TextButton")
-        button.Text = tabName
-        button.TextColor3 = SiriusUILib.Colors.Foreground
-        button.TextSize = 14
-        button.Font = Enum.Font.Gotham
-        button.Size = UDim2.new(1, -10, 0, 40)
-        button.Position = UDim2.new(0, 5, 0, #tabs * 45 + 5)
-        button.BackgroundColor3 = SiriusUILib.Colors.Background
-        button.BackgroundTransparency = 0.8
-        button.BorderSizePixel = 0
-        button.Parent = tabContainer
+    -- Список кнопок и страниц
+    local topButtons = {}
+    local pages = {}
+    local activePage = nil
 
-        local buttonCorner = Instance.new("UICorner")
-        buttonCorner.CornerRadius = UDim.new(0, 4)
-        buttonCorner.Parent = button
+    -- Функция создания кнопки на топбаре
+    local function createTopButton(name, callback)
+        local btn = Instance.new("TextButton")
+        btn.Text = name
+        btn.TextColor3 = SiriusUILib.Colors.Foreground
+        btn.TextSize = 14
+        btn.Font = Enum.Font.GothamSemibold
+        btn.Size = UDim2.new(0, 80, 0, 35)
+        btn.BackgroundColor3 = SiriusUILib.Colors.Background
+        btn.BackgroundTransparency = 0.8
+        btn.BorderSizePixel = 0
+        btn.Parent = topButtonsContainer
 
-        local buttonStroke = Instance.new("UIStroke")
-        buttonStroke.Color = SiriusUILib.Colors.Foreground
-        buttonStroke.Thickness = 0.5
-        buttonStroke.Transparency = 0.7
-        buttonStroke.Parent = button
+        local btnCorner = Instance.new("UICorner")
+        btnCorner.CornerRadius = UDim.new(0, 6)
+        btnCorner.Parent = btn
 
-        button.MouseButton1Click:Connect(function()
-            if callback then callback() end
-            for _, btn in pairs(tabs) do
-                btn.Button.BackgroundTransparency = 0.8
-                btn.Button.TextColor3 = SiriusUILib.Colors.Foreground
-                if btn.Content then btn.Content.Visible = false end
-            end
-            button.BackgroundTransparency = 0.3
-            button.TextColor3 = SiriusUILib.Colors.GradientStart
-            if activeTab and activeTab.Content then
-                activeTab.Content.Visible = false
+        btn.MouseEnter:Connect(function()
+            createTween(btn, {BackgroundTransparency = 0.5}, 0.2)
+        end)
+        btn.MouseLeave:Connect(function()
+            if activePage ~= name then
+                createTween(btn, {BackgroundTransparency = 0.8}, 0.2)
             end
         end)
 
-        return button
+        btn.MouseButton1Click:Connect(function()
+            if callback then callback() end
+            for _, b in pairs(topButtons) do
+                createTween(b.Button, {BackgroundTransparency = 0.8, TextColor3 = SiriusUILib.Colors.Foreground}, 0.2)
+            end
+            createTween(btn, {BackgroundTransparency = 0.3, TextColor3 = SiriusUILib.Colors.GradientStart}, 0.2)
+            activePage = name
+            playSound(gui)
+        end)
+
+        table.insert(topButtons, {Name = name, Button = btn})
+        return btn
     end
 
-    -- API для создания таба
+    -- API окна
     local self = {}
-    
+
     function self:CreateTab(name)
-        local tabContent = Instance.new("ScrollingFrame")
-        tabContent.Name = name .. "Content"
-        tabContent.Size = UDim2.new(1, -20, 1, -20)
-        tabContent.Position = UDim2.new(0, 10, 0, 10)
-        tabContent.BackgroundTransparency = 1
-        tabContent.BorderSizePixel = 0
-        tabContent.ScrollBarThickness = 6
-        tabContent.ScrollBarImageColor3 = SiriusUILib.Colors.Foreground
-        tabContent.ScrollBarImageTransparency = 0.7
-        tabContent.Parent = contentContainer
-        tabContent.Visible = false
+        -- Создаём страницу
+        local page = Instance.new("ScrollingFrame")
+        page.Name = name
+        page.Size = UDim2.new(1, -20, 1, -20)
+        page.Position = UDim2.new(0, 10, 0, 10)
+        page.BackgroundTransparency = 1
+        page.BorderSizePixel = 0
+        page.ScrollBarThickness = 6
+        page.ScrollBarImageColor3 = SiriusUILib.Colors.Foreground
+        page.ScrollBarImageTransparency = 0.7
+        page.Parent = pagesContainer
+        page.Visible = false
 
         local uiList = Instance.new("UIListLayout")
-        uiList.Padding = UDim.new(0, 8)
+        uiList.Padding = UDim.new(0, 10)
         uiList.HorizontalAlignment = Enum.HorizontalAlignment.Center
-        uiList.Parent = tabContent
+        uiList.Parent = page
 
-        local button = createTabButton(name, function()
-            tabContent.Visible = true
-            activeTab = {Name = name, Content = tabContent, Button = button}
+        -- Создаём кнопку на топбаре
+        local button = createTopButton(name, function()
+            if activePage then
+                local prevPage = pagesContainer:FindFirstChild(activePage)
+                if prevPage then prevPage.Visible = false end
+            end
+            page.Visible = true
         end)
 
-        table.insert(tabs, {Name = name, Content = tabContent, Button = button})
+        table.insert(pages, {Name = name, Page = page, Button = button})
 
-        if #tabs == 1 then
-            button.BackgroundTransparency = 0.3
-            button.TextColor3 = SiriusUILib.Colors.GradientStart
-            tabContent.Visible = true
-            activeTab = tabs[1]
+        -- Активируем первую страницу
+        if #pages == 1 then
+            page.Visible = true
+            activePage = name
+            createTween(button, {BackgroundTransparency = 0.3, TextColor3 = SiriusUILib.Colors.GradientStart}, 0.2)
         end
 
         local tabApi = {}
-        
+
         function tabApi:CreateButton(text, callback)
             local btn = Instance.new("TextButton")
             btn.Text = text
             btn.TextColor3 = SiriusUILib.Colors.Foreground
             btn.TextSize = 14
             btn.Font = Enum.Font.Gotham
-            btn.Size = UDim2.new(0, 200, 0, 35)
+            btn.Size = UDim2.new(0, 220, 0, 38)
             btn.BackgroundColor3 = SiriusUILib.Colors.Background
-            btn.BackgroundTransparency = 0.7
+            btn.BackgroundTransparency = 0.75
             btn.BorderSizePixel = 0
-            btn.Parent = tabContent
+            btn.Parent = page
 
             local btnCorner = Instance.new("UICorner")
-            btnCorner.CornerRadius = UDim.new(0, 6)
+            btnCorner.CornerRadius = UDim.new(0, 8)
             btnCorner.Parent = btn
 
             local btnStroke = Instance.new("UIStroke")
             btnStroke.Color = SiriusUILib.Colors.Foreground
-            btnStroke.Thickness = 0.5
+            btnStroke.Thickness = 0.8
             btnStroke.Transparency = 0.8
             btnStroke.Parent = btn
 
             btn.MouseEnter:Connect(function()
-                createTween(btn, {BackgroundTransparency = 0.4}, 0.2)
+                createTween(btn, {BackgroundTransparency = 0.5}, 0.2)
+                createTween(btnStroke, {Transparency = 0.5}, 0.2)
             end)
             btn.MouseLeave:Connect(function()
-                createTween(btn, {BackgroundTransparency = 0.7}, 0.2)
+                createTween(btn, {BackgroundTransparency = 0.75}, 0.2)
+                createTween(btnStroke, {Transparency = 0.8}, 0.2)
             end)
 
             btn.MouseButton1Click:Connect(function()
-                playSound(mainGUI)
+                playSound(gui)
                 if callback then callback() end
             end)
 
@@ -286,45 +321,44 @@ function SiriusUILib:CreateWindow(title, size)
         end
 
         function tabApi:CreateToggle(text, default, callback)
-            local toggleFrame = Instance.new("Frame")
-            toggleFrame.Size = UDim2.new(0, 250, 0, 35)
-            toggleFrame.BackgroundTransparency = 1
-            toggleFrame.Parent = tabContent
+            local frame = Instance.new("Frame")
+            frame.Size = UDim2.new(0, 220, 0, 38)
+            frame.BackgroundTransparency = 1
+            frame.Parent = page
 
             local label = Instance.new("TextLabel")
             label.Text = text
             label.TextColor3 = SiriusUILib.Colors.Foreground
-            label.TextSize = 14
+            label.TextSize = 13
             label.Font = Enum.Font.Gotham
-            label.Size = UDim2.new(0, 180, 1, 0)
+            label.Size = UDim2.new(0, 160, 1, 0)
             label.Position = UDim2.new(0, 5, 0, 0)
             label.TextXAlignment = Enum.TextXAlignment.Left
             label.BackgroundTransparency = 1
-            label.Parent = toggleFrame
+            label.Parent = frame
 
             local toggleBtn = Instance.new("TextButton")
             toggleBtn.Text = default and "ON" or "OFF"
-            toggleBtn.TextColor3 = SiriusUILib.Colors.Foreground
+            toggleBtn.TextColor3 = SiriusUILib.Colors.Background
             toggleBtn.TextSize = 12
             toggleBtn.Font = Enum.Font.GothamBold
-            toggleBtn.Size = UDim2.new(0, 50, 1, 0)
-            toggleBtn.Position = UDim2.new(1, -55, 0, 0)
-            toggleBtn.BackgroundColor3 = default and SiriusUILib.Colors.Foreground or SiriusUILib.Colors.Background
-            toggleBtn.BackgroundTransparency = default and 0.3 or 0.7
+            toggleBtn.Size = UDim2.new(0, 45, 0, 28)
+            toggleBtn.Position = UDim2.new(1, -50, 0.5, -14)
+            toggleBtn.BackgroundColor3 = default and SiriusUILib.Colors.Foreground or Color3.fromRGB(60, 60, 60)
             toggleBtn.BorderSizePixel = 0
-            toggleBtn.Parent = toggleFrame
+            toggleBtn.Parent = frame
 
             local btnCorner = Instance.new("UICorner")
-            btnCorner.CornerRadius = UDim.new(0, 4)
+            btnCorner.CornerRadius = UDim.new(0, 6)
             btnCorner.Parent = toggleBtn
 
             local state = default
             toggleBtn.MouseButton1Click:Connect(function()
                 state = not state
                 toggleBtn.Text = state and "ON" or "OFF"
-                toggleBtn.BackgroundColor3 = state and SiriusUILib.Colors.Foreground or SiriusUILib.Colors.Background
-                toggleBtn.BackgroundTransparency = state and 0.3 or 0.7
-                playSound(mainGUI)
+                toggleBtn.BackgroundColor3 = state and SiriusUILib.Colors.Foreground or Color3.fromRGB(60, 60, 60)
+                toggleBtn.TextColor3 = state and SiriusUILib.Colors.Background or SiriusUILib.Colors.Foreground
+                playSound(gui)
                 if callback then callback(state) end
             end)
 
@@ -332,10 +366,10 @@ function SiriusUILib:CreateWindow(title, size)
         end
 
         function tabApi:CreateSlider(text, min, max, default, callback)
-            local sliderFrame = Instance.new("Frame")
-            sliderFrame.Size = UDim2.new(0, 250, 0, 55)
-            sliderFrame.BackgroundTransparency = 1
-            sliderFrame.Parent = tabContent
+            local frame = Instance.new("Frame")
+            frame.Size = UDim2.new(0, 220, 0, 65)
+            frame.BackgroundTransparency = 1
+            frame.Parent = page
 
             local label = Instance.new("TextLabel")
             label.Text = text
@@ -344,40 +378,37 @@ function SiriusUILib:CreateWindow(title, size)
             label.Font = Enum.Font.Gotham
             label.Size = UDim2.new(1, 0, 0, 20)
             label.BackgroundTransparency = 1
-            label.Parent = sliderFrame
+            label.Parent = frame
 
             local valueLabel = Instance.new("TextLabel")
             valueLabel.Text = tostring(default)
             valueLabel.TextColor3 = SiriusUILib.Colors.Foreground
             valueLabel.TextSize = 12
             valueLabel.Font = Enum.Font.GothamBold
-            valueLabel.Size = UDim2.new(0, 50, 0, 20)
-            valueLabel.Position = UDim2.new(1, -50, 0, 0)
+            valueLabel.Size = UDim2.new(0, 40, 0, 20)
+            valueLabel.Position = UDim2.new(1, -40, 0, 0)
             valueLabel.TextXAlignment = Enum.TextXAlignment.Right
             valueLabel.BackgroundTransparency = 1
-            valueLabel.Parent = sliderFrame
+            valueLabel.Parent = frame
 
             local barBg = Instance.new("Frame")
             barBg.Size = UDim2.new(1, 0, 0, 4)
-            barBg.Position = UDim2.new(0, 0, 0, 25)
-            barBg.BackgroundColor3 = SiriusUILib.Colors.Foreground
-            barBg.BackgroundTransparency = 0.8
+            barBg.Position = UDim2.new(0, 0, 0, 30)
+            barBg.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
             barBg.BorderSizePixel = 0
-            barBg.Parent = sliderFrame
+            barBg.Parent = frame
 
             local barFill = Instance.new("Frame")
             barFill.Size = UDim2.new((default - min) / (max - min), 0, 1, 0)
             barFill.BackgroundColor3 = SiriusUILib.Colors.Foreground
-            barFill.BackgroundTransparency = 0.3
             barFill.BorderSizePixel = 0
             barFill.Parent = barBg
 
             local sliderBtn = Instance.new("TextButton")
             sliderBtn.Text = ""
-            sliderBtn.Size = UDim2.new(0, 12, 0, 12)
-            sliderBtn.Position = UDim2.new((default - min) / (max - min), -6, 0, -4)
+            sliderBtn.Size = UDim2.new(0, 14, 0, 14)
+            sliderBtn.Position = UDim2.new((default - min) / (max - min), -7, 0, -5)
             sliderBtn.BackgroundColor3 = SiriusUILib.Colors.Foreground
-            sliderBtn.BackgroundTransparency = 0.2
             sliderBtn.BorderSizePixel = 0
             sliderBtn.Parent = barBg
 
@@ -393,7 +424,7 @@ function SiriusUILib:CreateWindow(title, size)
                 value = math.floor(min + (max - min) * relativeX + 0.5)
                 valueLabel.Text = tostring(value)
                 barFill.Size = UDim2.new(relativeX, 0, 1, 0)
-                sliderBtn.Position = UDim2.new(relativeX, -6, 0, -4)
+                sliderBtn.Position = UDim2.new(relativeX, -7, 0, -5)
                 if callback then callback(value) end
             end
 
@@ -422,29 +453,29 @@ function SiriusUILib:CreateWindow(title, size)
             inputBox.PlaceholderText = placeholder
             inputBox.Text = ""
             inputBox.TextColor3 = SiriusUILib.Colors.Foreground
-            inputBox.PlaceholderColor3 = Color3.fromRGB(150, 150, 150)
-            inputBox.TextSize = 14
+            inputBox.PlaceholderColor3 = Color3.fromRGB(120, 120, 120)
+            inputBox.TextSize = 13
             inputBox.Font = Enum.Font.Gotham
-            inputBox.Size = UDim2.new(0, 250, 0, 35)
+            inputBox.Size = UDim2.new(0, 220, 0, 38)
             inputBox.BackgroundColor3 = SiriusUILib.Colors.Background
-            inputBox.BackgroundTransparency = 0.7
+            inputBox.BackgroundTransparency = 0.75
             inputBox.BorderSizePixel = 0
-            inputBox.Parent = tabContent
+            inputBox.Parent = page
 
             local inputCorner = Instance.new("UICorner")
-            inputCorner.CornerRadius = UDim.new(0, 6)
+            inputCorner.CornerRadius = UDim.new(0, 8)
             inputCorner.Parent = inputBox
 
             local inputStroke = Instance.new("UIStroke")
             inputStroke.Color = SiriusUILib.Colors.Foreground
-            inputStroke.Thickness = 0.5
+            inputStroke.Thickness = 0.8
             inputStroke.Transparency = 0.8
             inputStroke.Parent = inputBox
 
             inputBox.FocusLost:Connect(function(enterPressed)
                 if enterPressed and callback then
                     callback(inputBox.Text)
-                    playSound(mainGUI)
+                    playSound(gui)
                 end
             end)
 
@@ -455,21 +486,21 @@ function SiriusUILib:CreateWindow(title, size)
             local label = Instance.new("TextLabel")
             label.Text = text
             label.TextColor3 = SiriusUILib.Colors.Foreground
-            label.TextSize = 13
+            label.TextSize = 12
             label.Font = Enum.Font.Gotham
-            label.Size = UDim2.new(0, 250, 0, 25)
+            label.Size = UDim2.new(0, 220, 0, 25)
             label.BackgroundTransparency = 1
-            label.Parent = tabContent
+            label.Parent = page
             return label
         end
 
         function tabApi:CreateSeparator()
             local sep = Instance.new("Frame")
-            sep.Size = UDim2.new(0, 250, 0, 1)
+            sep.Size = UDim2.new(0, 220, 0, 1)
             sep.BackgroundColor3 = SiriusUILib.Colors.Foreground
             sep.BackgroundTransparency = 0.8
             sep.BorderSizePixel = 0
-            sep.Parent = tabContent
+            sep.Parent = page
             return sep
         end
 
@@ -480,11 +511,11 @@ function SiriusUILib:CreateWindow(title, size)
         duration = duration or SiriusUILib.Settings.NotificationDuration
 
         local notifFrame = Instance.new("Frame")
-        notifFrame.Size = UDim2.new(0, 300, 0, 60)
-        notifFrame.Position = UDim2.new(1, 20, 1, -80)
+        notifFrame.Size = UDim2.new(0, 320, 0, 65)
+        notifFrame.Position = UDim2.new(1, 20, 1, -85)
         notifFrame.AnchorPoint = Vector2.new(1, 1)
         notifFrame.BackgroundColor3 = SiriusUILib.Colors.Background
-        notifFrame.BackgroundTransparency = 0.2
+        notifFrame.BackgroundTransparency = 0.15
         notifFrame.BorderSizePixel = 0
         notifFrame.Parent = gui
 
@@ -503,8 +534,8 @@ function SiriusUILib:CreateWindow(title, size)
         titleLabel.TextColor3 = SiriusUILib.Colors.Foreground
         titleLabel.TextSize = 14
         titleLabel.Font = Enum.Font.GothamSemibold
-        titleLabel.Position = UDim2.new(0, 10, 0, 5)
-        titleLabel.Size = UDim2.new(1, -20, 0, 20)
+        titleLabel.Position = UDim2.new(0, 12, 0, 8)
+        titleLabel.Size = UDim2.new(1, -24, 0, 20)
         titleLabel.TextXAlignment = Enum.TextXAlignment.Left
         titleLabel.BackgroundTransparency = 1
         titleLabel.Parent = notifFrame
@@ -514,19 +545,19 @@ function SiriusUILib:CreateWindow(title, size)
         descLabel.TextColor3 = SiriusUILib.Colors.Foreground
         descLabel.TextSize = 12
         descLabel.Font = Enum.Font.Gotham
-        descLabel.Position = UDim2.new(0, 10, 0, 25)
-        descLabel.Size = UDim2.new(1, -20, 0, 30)
+        descLabel.Position = UDim2.new(0, 12, 0, 30)
+        descLabel.Size = UDim2.new(1, -24, 0, 30)
         descLabel.TextXAlignment = Enum.TextXAlignment.Left
         descLabel.TextYAlignment = Enum.TextYAlignment.Top
         descLabel.BackgroundTransparency = 1
         descLabel.Parent = notifFrame
 
-        notifFrame.Position = UDim2.new(1, 20, 1, -80)
-        createTween(notifFrame, {Position = UDim2.new(1, -320, 1, -80)}, 0.4)
+        notifFrame.Position = UDim2.new(1, 20, 1, -85)
+        createTween(notifFrame, {Position = UDim2.new(1, -340, 1, -85)}, 0.4)
         playSound(gui)
 
         task.delay(duration, function()
-            createTween(notifFrame, {Position = UDim2.new(1, 20, 1, -80), BackgroundTransparency = 1}, 0.4)
+            createTween(notifFrame, {Position = UDim2.new(1, 20, 1, -85), BackgroundTransparency = 1}, 0.4)
             task.wait(0.5)
             notifFrame:Destroy()
         end)
@@ -546,21 +577,23 @@ function SiriusUILib:CreateWindow(title, size)
         gui.Enabled = not gui.Enabled
     end
 
+    -- Делаем топбар перетаскиваемым
+    makeDraggable(topBar)
+
     mainGUI = gui
     return self
 end
 
 function SiriusUILib:Notify(title, description, duration)
     if not mainGUI then return end
-    
     duration = duration or SiriusUILib.Settings.NotificationDuration
 
     local notifFrame = Instance.new("Frame")
-    notifFrame.Size = UDim2.new(0, 300, 0, 60)
-    notifFrame.Position = UDim2.new(1, 20, 1, -80)
+    notifFrame.Size = UDim2.new(0, 320, 0, 65)
+    notifFrame.Position = UDim2.new(1, 20, 1, -85)
     notifFrame.AnchorPoint = Vector2.new(1, 1)
     notifFrame.BackgroundColor3 = SiriusUILib.Colors.Background
-    notifFrame.BackgroundTransparency = 0.2
+    notifFrame.BackgroundTransparency = 0.15
     notifFrame.BorderSizePixel = 0
     notifFrame.Parent = mainGUI
 
@@ -579,8 +612,8 @@ function SiriusUILib:Notify(title, description, duration)
     titleLabel.TextColor3 = SiriusUILib.Colors.Foreground
     titleLabel.TextSize = 14
     titleLabel.Font = Enum.Font.GothamSemibold
-    titleLabel.Position = UDim2.new(0, 10, 0, 5)
-    titleLabel.Size = UDim2.new(1, -20, 0, 20)
+    titleLabel.Position = UDim2.new(0, 12, 0, 8)
+    titleLabel.Size = UDim2.new(1, -24, 0, 20)
     titleLabel.TextXAlignment = Enum.TextXAlignment.Left
     titleLabel.BackgroundTransparency = 1
     titleLabel.Parent = notifFrame
@@ -590,18 +623,18 @@ function SiriusUILib:Notify(title, description, duration)
     descLabel.TextColor3 = SiriusUILib.Colors.Foreground
     descLabel.TextSize = 12
     descLabel.Font = Enum.Font.Gotham
-    descLabel.Position = UDim2.new(0, 10, 0, 25)
-    descLabel.Size = UDim2.new(1, -20, 0, 30)
+    descLabel.Position = UDim2.new(0, 12, 0, 30)
+    descLabel.Size = UDim2.new(1, -24, 0, 30)
     descLabel.TextXAlignment = Enum.TextXAlignment.Left
     descLabel.TextYAlignment = Enum.TextYAlignment.Top
     descLabel.BackgroundTransparency = 1
     descLabel.Parent = notifFrame
 
-    createTween(notifFrame, {Position = UDim2.new(1, -320, 1, -80)}, 0.4)
+    createTween(notifFrame, {Position = UDim2.new(1, -340, 1, -85)}, 0.4)
     playSound(mainGUI)
 
     task.delay(duration, function()
-        createTween(notifFrame, {Position = UDim2.new(1, 20, 1, -80), BackgroundTransparency = 1}, 0.4)
+        createTween(notifFrame, {Position = UDim2.new(1, 20, 1, -85), BackgroundTransparency = 1}, 0.4)
         task.wait(0.5)
         notifFrame:Destroy()
     end)
